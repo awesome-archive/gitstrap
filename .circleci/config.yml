@@ -21,23 +21,23 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 ---
-language: go
-go:
-  - 1.11.x
-before_install:
-  - curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s v1.17.1
-  - ./bin/golangci-lint --version
-  - go get -v -t ./...
-script:
-  - go build -o /dev/null .
-  - go build -o /dev/null ./cmd/gitstrap
-  - go test .
-  - ./bin/golangci-lint run
-deploy:
-- provider: script
-  skip_cleanup: true
-  script: curl -sL https://git.io/goreleaser | bash
-  on:
-    tags: true
-    condition: $TRAVIS_OS_NAME = linux
-    condition: $TRAVIS_GO_VERSION = 1.11.x
+version: 2
+defaults: &defaults
+  docker:
+    - image: g4s8/gorultor:alpine3.10
+  environment:
+    CGO_ENABLED: 0
+jobs:
+  build:
+    <<: *defaults
+    working_directory: /go/src/github.com/g4s8/gitstrap
+    steps:
+      - run: go env
+      - checkout
+      - run: go get -v -t ./...
+      - run: go build -o /dev/null .
+      - run: go build -o /dev/null ./cmd/gitstrap
+      - run: go test .
+      - run: golangci-lint run
+      - run: pdd --source=$(pwd) --verbose --file=/dev/null
+      - run: gitlint
